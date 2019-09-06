@@ -57,7 +57,7 @@ public class NavigationReactModule extends ReactContextBaseJavaModule {
     }
 
     public static void setInitialProps(Bundle props) {
-        initialProps = props
+        initialProps = props;
     }
 
     @Override
