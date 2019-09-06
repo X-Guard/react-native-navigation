@@ -1,7 +1,7 @@
 package com.reactnativenavigation.bridge;
 
 import android.support.annotation.Nullable;
-
+import android.os.Bundle;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -45,6 +45,8 @@ import java.util.List;
 public class NavigationReactModule extends ReactContextBaseJavaModule {
     public static final String NAME = "NavigationReactModule";
 
+    public static Bundle initialProps;
+
     public NavigationReactModule(ReactApplicationContext reactContext) {
         super(reactContext);
     }
@@ -52,6 +54,10 @@ public class NavigationReactModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return NAME;
+    }
+
+    public static void setInitialProps(Bundle props) {
+        initialProps = props
     }
 
     @Override

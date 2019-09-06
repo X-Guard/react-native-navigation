@@ -6,6 +6,7 @@ import android.view.View;
 
 import com.facebook.react.ReactRootView;
 import com.reactnativenavigation.NavigationApplication;
+import com.reactnativenavigation.bridge.NavigationReactModule;
 import com.reactnativenavigation.params.NavigationParams;
 import com.reactnativenavigation.screens.SingleScreen;
 import com.reactnativenavigation.utils.ViewUtils;
@@ -53,6 +54,9 @@ public class ContentView extends ReactRootView {
         final Bundle params = new Bundle();
         params.putAll(navigationParams.toBundle());
         params.putAll(initialProps);
+        if (NavigationReactModule.initialProps != null){
+            params.putAll(NavigationReactModule.initialProps);
+        }
         return params;
     }
 
