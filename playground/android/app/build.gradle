@@ -2,14 +2,17 @@ apply plugin: "com.android.application"
 
 project.ext.react = [
         root     : "../../../",
-        entryFile: "playground/index.js"
+        entryFile: "index.js",
+        bundleAssetName: "index.android.bundle",
+        bundleInAlpha: true,
+        bundleInBeta: true
 ]
 
 apply from: "../../../node_modules/react-native/react.gradle"
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
+    ndkVersion "20.1.5948944"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -19,17 +22,15 @@ android {
     defaultConfig {
         applicationId "com.reactnativenavigation.playground"
         minSdkVersion 21
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         ndk {
             abiFilters "armeabi-v7a", "x86"
         }
 
-        testBuildType System.getProperty('testBuildType', 'debug')  //this will later be used to control the test apk build type
-        missingDimensionStrategy "minReactNative", "minReactNative46"
-        missingDimensionStrategy "RNN.reactNativeVersion", "reactNative51"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testBuildType System.getProperty('testBuildType', 'debug')
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     signingConfigs {
         release {
@@ -44,29 +45,36 @@ android {
             signingConfig signingConfigs.release
         }
     }
-}
-
-configurations.all {
-    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-        def requested = details.requested
-        if (requested.group == 'com.android.support') {
-            details.useVersion "26.1.0"
-        }
+    packagingOptions {
+        pickFirst "lib/armeabi-v7a/libc++_shared.so"
+        pickFirst "lib/arm64-v8a/libc++_shared.so"
+        pickFirst "lib/x86/libc++_shared.so"
+        pickFirst "lib/x86_64/libc++_shared.so"
     }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:design:26.1.0'
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
 
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'
-    implementation project(':react-native-navigation')
-    implementation project(':react-native-view-overflow')
+    implementation 'com.facebook.soloader:soloader:0.9.0'
 
-    androidTestImplementation(project(':detox'))
+    //noinspection GradleDynamicVersion
+    implementation 'org.webkit:android-jsc-intl:+'
+    implementation project(':react-native-navigation')
+
+    androidTestImplementation('com.wix:detox:+') { transitive = true }
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test:rules:1.0.2'
 }
+
+
+task copyDownloadableDepsToLibs(type: Copy) {
+    from configurations.compile
+    into 'libs'
+}
+
+apply from: file("../../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+applyNativeModulesAppBuildGradle(project)

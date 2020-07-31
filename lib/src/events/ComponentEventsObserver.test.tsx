@@ -2,9 +2,13 @@ import * as React from 'react';
 import * as renderer from 'react-test-renderer';
 import { ComponentEventsObserver } from './ComponentEventsObserver';
 import { NativeEventsReceiver } from '../adapters/NativeEventsReceiver.mock';
+import { EventSubscription } from '../interfaces/EventSubscription';
+import { Store } from '../components/Store';
+import { ComponentDidAppearEvent } from '../interfaces/ComponentEvents';
 
 describe('ComponentEventsObserver', () => {
   const mockEventsReceiver = new NativeEventsReceiver();
+  const mockStore = new Store();
   const didAppearFn = jest.fn();
   const didDisappearFn = jest.fn();
   const didMountFn = jest.fn();
@@ -14,8 +18,10 @@ describe('ComponentEventsObserver', () => {
   const searchBarCancelPressedFn = jest.fn();
   const previewCompletedFn = jest.fn();
   const modalDismissedFn = jest.fn();
-  let subscription;
-  let uut;
+  const modalAttemptedToDismissFn = jest.fn();
+  const screenPoppedFn = jest.fn();
+  let subscription: EventSubscription;
+  let uut: ComponentEventsObserver;
 
   class SimpleScreen extends React.Component<any, any> {
     render() {
@@ -24,7 +30,7 @@ describe('ComponentEventsObserver', () => {
   }
 
   class UnboundScreen extends React.Component<any, any> {
-    constructor(props) {
+    constructor(props: any) {
       super(props);
     }
 
@@ -44,24 +50,32 @@ describe('ComponentEventsObserver', () => {
       didDisappearFn();
     }
 
-    navigationButtonPressed(event) {
+    navigationButtonPressed(event: any) {
       navigationButtonPressedFn(event);
     }
 
-    modalDismissed(event) {
+    modalDismissed(event: any) {
       modalDismissedFn(event);
     }
 
-    searchBarUpdated(event) {
+    modalAttemptedToDismiss(event: any) {
+      modalAttemptedToDismissFn(event);
+    }
+
+    searchBarUpdated(event: any) {
       searchBarUpdatedFn(event);
     }
 
-    searchBarCancelPressed(event) {
+    searchBarCancelPressed(event: any) {
       searchBarCancelPressedFn(event);
     }
 
-    previewCompleted(event) {
+    previewCompleted(event: any) {
       previewCompletedFn(event);
+    }
+
+    screenPopped(event: any) {
+      screenPoppedFn(event);
     }
 
     render() {
@@ -70,7 +84,7 @@ describe('ComponentEventsObserver', () => {
   }
 
   class BoundScreen extends React.Component<any, any> {
-    constructor(props) {
+    constructor(props: any) {
       super(props);
       subscription = uut.bindComponent(this);
     }
@@ -83,32 +97,40 @@ describe('ComponentEventsObserver', () => {
       willUnmountFn();
     }
 
-    componentDidAppear() {
-      didAppearFn();
+    componentDidAppear(event: ComponentDidAppearEvent) {
+      didAppearFn(event);
     }
 
     componentDidDisappear() {
       didDisappearFn();
     }
 
-    navigationButtonPressed(event) {
+    navigationButtonPressed(event: any) {
       navigationButtonPressedFn(event);
     }
 
-    modalDismissed(event) {
+    modalDismissed(event: any) {
       modalDismissedFn(event);
     }
 
-    searchBarUpdated(event) {
+    modalAttemptedToDismiss(event: any) {
+      modalAttemptedToDismissFn(event);
+    }
+
+    searchBarUpdated(event: any) {
       searchBarUpdatedFn(event);
     }
 
-    searchBarCancelPressed(event) {
+    searchBarCancelPressed(event: any) {
       searchBarCancelPressedFn(event);
     }
 
-    previewCompleted(event) {
+    previewCompleted(event: any) {
       previewCompletedFn(event);
+    }
+
+    screenPopped(event: any) {
+      screenPoppedFn(event);
     }
 
     render() {
@@ -118,7 +140,7 @@ describe('ComponentEventsObserver', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    uut = new ComponentEventsObserver(mockEventsReceiver);
+    uut = new ComponentEventsObserver(mockEventsReceiver, mockStore);
   });
 
   it(`bindComponent expects a component with componentId`, () => {
@@ -135,21 +157,21 @@ describe('ComponentEventsObserver', () => {
     expect(tree.toJSON()).toBeDefined();
     expect(didAppearFn).not.toHaveBeenCalled();
 
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).toHaveBeenCalledTimes(1);
   });
 
   it(`bindComponent should use optional componentId if component has a componentId in props`, () => {
-    const tree = renderer.create(<UnboundScreen  componentId={'doNotUseThisId'} />);
+    const tree = renderer.create(<UnboundScreen componentId={'doNotUseThisId'} />);
     uut.bindComponent(tree.getInstance() as any, 'myCompId')
 
     expect(tree.toJSON()).toBeDefined();
-    
-    uut.notifyComponentDidAppear({ componentId: 'dontUseThisId', componentName: 'doesnt matter' });
-    expect(didAppearFn).not.toHaveBeenCalled();
-    
 
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'dontUseThisId', componentName: 'doesnt matter', componentType: 'Component' });
+    expect(didAppearFn).not.toHaveBeenCalled();
+
+
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).toHaveBeenCalledTimes(1);
   });
 
@@ -161,19 +183,23 @@ describe('ComponentEventsObserver', () => {
     expect(didDisappearFn).not.toHaveBeenCalled();
     expect(willUnmountFn).not.toHaveBeenCalled();
 
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).toHaveBeenCalledTimes(1);
 
-    uut.notifyComponentDidDisappear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidDisappear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didDisappearFn).toHaveBeenCalledTimes(1);
 
     uut.notifyNavigationButtonPressed({ componentId: 'myCompId', buttonId: 'myButtonId' });
     expect(navigationButtonPressedFn).toHaveBeenCalledTimes(1);
     expect(navigationButtonPressedFn).toHaveBeenCalledWith({ buttonId: 'myButtonId', componentId: 'myCompId' });
 
-    uut.notifyModalDismissed({ componentId: 'myCompId' });
+    uut.notifyModalDismissed({ componentId: 'myCompId', componentName: 'myCompName', modalsDismissed: 1 });
     expect(modalDismissedFn).toHaveBeenCalledTimes(1);
-    expect(modalDismissedFn).toHaveBeenLastCalledWith({ componentId: 'myCompId' })
+    expect(modalDismissedFn).toHaveBeenLastCalledWith({ componentId: 'myCompId', componentName: 'myCompName', modalsDismissed: 1 })
+
+    uut.notifyModalAttemptedToDismiss({ componentId: 'myCompId' });
+    expect(modalAttemptedToDismissFn).toHaveBeenCalledTimes(1);
+    expect(modalAttemptedToDismissFn).toHaveBeenLastCalledWith({ componentId: 'myCompId' })
 
     uut.notifySearchBarUpdated({ componentId: 'myCompId', text: 'theText', isFocused: true });
     expect(searchBarUpdatedFn).toHaveBeenCalledTimes(1);
@@ -187,13 +213,49 @@ describe('ComponentEventsObserver', () => {
     expect(previewCompletedFn).toHaveBeenCalledTimes(1);
     expect(previewCompletedFn).toHaveBeenCalledWith({ componentId: 'myCompId' });
 
+    uut.notifyScreenPopped({ componentId: 'myCompId' });
+    expect(screenPoppedFn).toHaveBeenCalledTimes(1);
+    expect(screenPoppedFn).toHaveBeenLastCalledWith({ componentId: 'myCompId' })
+
     tree.unmount();
     expect(willUnmountFn).toHaveBeenCalledTimes(1);
   });
 
+  it(`registerComponentListener accepts listener object`, () => {
+    const tree = renderer.create(<UnboundScreen />);
+    const didAppearListenerFn = jest.fn();
+    uut.registerComponentListener({
+      componentDidAppear: didAppearListenerFn
+    }, 'myCompId')
+
+    expect(tree.toJSON()).toBeDefined();
+    expect(didAppearListenerFn).not.toHaveBeenCalled();
+
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
+    expect(didAppearListenerFn).toHaveBeenCalledTimes(1);
+  });
+
+  it(`componentDidAppear should receive component props from store`, () => {
+    const event = {
+      componentId: 'myCompId',
+      componentType: 'Component',
+      passProps: {
+        propA: 'propA'
+      },
+      componentName: 'doesnt matter'
+    }
+    renderer.create(<BoundScreen componentId={event.componentId} />);
+    mockStore.updateProps(event.componentId, event.passProps)
+    expect(didAppearFn).not.toHaveBeenCalled();
+
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
+    expect(didAppearFn).toHaveBeenCalledTimes(1);
+    expect(didAppearFn).toHaveBeenCalledWith(event);
+  });
+
   it(`doesnt call other componentIds`, () => {
     renderer.create(<BoundScreen componentId={'myCompId'} />);
-    uut.notifyComponentDidAppear({ componentId: 'other', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'other', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).not.toHaveBeenCalled();
   });
 
@@ -201,18 +263,18 @@ describe('ComponentEventsObserver', () => {
     const tree = renderer.create(<SimpleScreen componentId={'myCompId'} />);
     expect((tree.getInstance() as any).componentDidAppear).toBeUndefined();
     uut.bindComponent(tree.getInstance() as any);
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
   });
 
   it(`returns unregister fn`, () => {
     renderer.create(<BoundScreen componentId={'123'} />);
 
-    uut.notifyComponentDidAppear({ componentId: '123', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: '123', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).toHaveBeenCalledTimes(1);
 
     subscription.remove();
 
-    uut.notifyComponentDidAppear({ componentId: '123', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: '123', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).toHaveBeenCalledTimes(1);
   });
 
@@ -222,7 +284,7 @@ describe('ComponentEventsObserver', () => {
 
     uut.unmounted('123');
 
-    uut.notifyComponentDidAppear({ componentId: '123', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: '123', componentName: 'doesnt matter', componentType: 'Component' });
     expect(didAppearFn).not.toHaveBeenCalled();
   });
 
@@ -238,20 +300,20 @@ describe('ComponentEventsObserver', () => {
     const result2 = uut.bindComponent(instance2);
     expect(result1).not.toEqual(result2);
 
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
 
     expect(instance1.componentDidAppear).toHaveBeenCalledTimes(1);
     expect(instance2.componentDidAppear).toHaveBeenCalledTimes(1);
 
     result2.remove();
 
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
     expect(instance1.componentDidAppear).toHaveBeenCalledTimes(2);
     expect(instance2.componentDidAppear).toHaveBeenCalledTimes(1);
 
     result1.remove();
 
-    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter' });
+    uut.notifyComponentDidAppear({ componentId: 'myCompId', componentName: 'doesnt matter', componentType: 'Component' });
     expect(instance1.componentDidAppear).toHaveBeenCalledTimes(2);
     expect(instance2.componentDidAppear).toHaveBeenCalledTimes(1);
   });

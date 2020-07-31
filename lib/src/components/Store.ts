@@ -1,27 +1,70 @@
-import * as _ from 'lodash';
+import * as React from 'react';
+import { ComponentProvider } from 'react-native';
+import { IWrappedComponent } from './ComponentWrapper';
 
 export class Store {
-  private componentsByName = {};
-  private propsById = {};
+  private componentsByName: Record<string, ComponentProvider> = {};
+  private propsById: Record<string, any> = {};
+  private componentsInstancesById: Record<string, IWrappedComponent> = {};
+  private wrappedComponents: Record<string, React.ComponentClass<any>> = {};
+  private lazyRegistratorFn: ((lazyComponentRequest: string | number) => void) | undefined;
 
-  setPropsForId(componentId: string, props) {
-    _.set(this.propsById, componentId, props);
+  updateProps(componentId: string, props: any) {
+    this.propsById[componentId] = props;
+    const component = this.componentsInstancesById[componentId];
+    if (component) {
+      this.componentsInstancesById[componentId].setProps(props);
+    }
   }
 
   getPropsForId(componentId: string) {
-    return _.get(this.propsById, componentId, {});
+    return this.propsById[componentId] || {};
   }
 
-
-  setComponentClassForName(componentName: string | number, ComponentClass) {
-    _.set(this.componentsByName, componentName.toString(), ComponentClass);
+  clearComponent(componentId: string) {
+    delete this.propsById[componentId];
+    delete this.componentsInstancesById[componentId];
   }
 
-  getComponentClassForName(componentName: string | number) {
-    return _.get(this.componentsByName, componentName.toString());
+  setComponentClassForName(componentName: string | number, ComponentClass: ComponentProvider) {
+    this.componentsByName[componentName.toString()] = ComponentClass;
   }
-  
-  cleanId(id: string) {
-    _.unset(this.propsById, id);
+
+  getComponentClassForName(componentName: string | number): ComponentProvider | undefined {
+    this.ensureClassForName(componentName);
+    return this.componentsByName[componentName.toString()];
+  }
+
+  ensureClassForName(componentName: string | number): void {
+    if (!this.componentsByName[componentName.toString()] && this.lazyRegistratorFn) {
+      this.lazyRegistratorFn(componentName);
+    }
+  }
+
+  setComponentInstance(id: string, component: IWrappedComponent): void {
+    this.componentsInstancesById[id] = component;
+  }
+
+  getComponentInstance(id: string): IWrappedComponent {
+    return this.componentsInstancesById[id];
+  }
+
+  setWrappedComponent(
+    componentName: string | number,
+    wrappedComponent: React.ComponentClass<any>
+  ): void {
+    this.wrappedComponents[componentName] = wrappedComponent;
+  }
+
+  hasRegisteredWrappedComponent(componentName: string | number): boolean {
+    return componentName in this.wrappedComponents;
+  }
+
+  getWrappedComponent(componentName: string | number): React.ComponentClass<any> {
+    return this.wrappedComponents[componentName];
+  }
+
+  setLazyComponentRegistrator(lazyRegistratorFn: (lazyComponentRequest: string | number) => void) {
+    this.lazyRegistratorFn = lazyRegistratorFn;
   }
 }

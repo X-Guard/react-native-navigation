@@ -23,6 +23,7 @@
 @property (nonatomic, strong) Bool* animate;
 @property (nonatomic, strong) Bool* searchBar;
 @property (nonatomic, strong) Bool* searchBarHiddenWhenScrolling;
+@property (nonatomic, strong) Bool* hideNavBarOnFocusSearchBar;
 @property (nonatomic, strong) Text* testID;
 @property (nonatomic, strong) Text* barStyle;
 @property (nonatomic, strong) Text* searchBarPlaceholder;
@@ -34,7 +35,6 @@
 @property (nonatomic, strong) RNNButtonOptions* leftButtonStyle;
 @property (nonatomic, strong) RNNButtonOptions* rightButtonStyle;
 
-
-@property (nonatomic, strong) RNNComponentOptions* component;
+- (BOOL)shouldDrawBehind;
 
 @end
