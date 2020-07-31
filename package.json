@@ -1,6 +1,6 @@
 {
-  "name": "react-native-navigation",
-  "version": "6.10.1",
+  "name": "@x-guard/react-native-navigation",
+  "version": "6.10.2",
   "description": "React Native Navigation - truly native navigation for iOS and Android",
   "license": "MIT",
   "nativePackage": true,
@@ -14,7 +14,7 @@
   "readme": "https://github.com/wix/react-native-navigation#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wix/react-native-navigation.git"
+    "url": "https://github.com/x-guard/react-native-navigation.git"
   },
   "bin": {
     "rnn-link": "./autolink/postlink/run.js"
