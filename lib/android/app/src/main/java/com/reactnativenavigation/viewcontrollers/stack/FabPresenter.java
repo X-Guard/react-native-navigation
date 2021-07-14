@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import com.reactnativenavigation.R;
 import com.reactnativenavigation.options.FabOptions;
 import com.reactnativenavigation.utils.UiUtils;
+import com.reactnativenavigation.utils.ViewExtensionsKt;
 import com.reactnativenavigation.viewcontrollers.viewcontroller.ViewController;
 import com.reactnativenavigation.views.stack.fab.Fab;
 import com.reactnativenavigation.views.stack.fab.FabMenu;
@@ -71,6 +72,8 @@ public class FabPresenter {
     }
 
     private void createFab(ViewController component, FabOptions options) {
+        ViewExtensionsKt.removeFromParent(fabMenu);
+        ViewExtensionsKt.removeFromParent(fab);
         if (options.actionsArray.size() > 0) {
             fabMenu = new FabMenu(viewGroup.getContext(), options.id.get());
             setParams(component, fabMenu, options);

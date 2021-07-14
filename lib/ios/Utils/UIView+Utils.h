@@ -3,6 +3,7 @@
 
 typedef NS_ENUM(NSInteger, ViewType) {
     ViewTypeImage,
+    ViewTypeUIImage,
     ViewTypeText,
     ViewTypeOther
 };
@@ -12,5 +13,9 @@ typedef NS_ENUM(NSInteger, ViewType) {
 - (UIView *)findChildByClass:clazz;
 
 - (ViewType)viewType;
+
+- (void)stopMomentumScrollViews;
+
+- (void)setCornerRadius:(CGFloat)cornerRadius;
 
 @end

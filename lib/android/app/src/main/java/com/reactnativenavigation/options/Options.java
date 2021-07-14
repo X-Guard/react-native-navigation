@@ -1,5 +1,7 @@
 package com.reactnativenavigation.options;
 
+import android.content.Context;
+
 import com.reactnativenavigation.options.params.NullNumber;
 import com.reactnativenavigation.options.params.NullText;
 import com.reactnativenavigation.options.parsers.TypefaceLoader;
@@ -13,23 +15,24 @@ public class Options {
     public static final Options EMPTY = new Options();
 
     @NonNull
-    public static Options parse(TypefaceLoader typefaceManager, JSONObject json) {
+    public static Options parse(Context context, TypefaceLoader typefaceManager, JSONObject json) {
         Options result = new Options();
         if (json == null) return result;
 
-        result.topBar = TopBarOptions.parse(typefaceManager, json.optJSONObject("topBar"));
-        result.topTabs = TopTabsOptions.parse(json.optJSONObject("topTabs"));
+        result.topBar = TopBarOptions.parse(context, typefaceManager, json.optJSONObject("topBar"));
+        result.topTabs = TopTabsOptions.parse(context, json.optJSONObject("topTabs"));
         result.topTabOptions = TopTabOptions.parse(typefaceManager, json.optJSONObject("topTab"));
-        result.bottomTabOptions = BottomTabOptions.parse(typefaceManager, json.optJSONObject("bottomTab"));
-        result.bottomTabsOptions = BottomTabsOptions.parse(json.optJSONObject("bottomTabs"));
+        result.bottomTabOptions = BottomTabOptions.parse(context, typefaceManager, json.optJSONObject("bottomTab"));
+        result.bottomTabsOptions = BottomTabsOptions.parse(context, json.optJSONObject("bottomTabs"));
         result.overlayOptions = OverlayOptions.parse(json.optJSONObject("overlay"));
-        result.fabOptions = FabOptions.parse(json.optJSONObject("fab"));
+        result.fabOptions = FabOptions.parse(context, json.optJSONObject("fab"));
         result.sideMenuRootOptions = SideMenuRootOptions.parse(json.optJSONObject("sideMenu"));
         result.animations = AnimationsOptions.parse(json.optJSONObject("animations"));
         result.modal = ModalOptions.parse(json);
-        result.navigationBar = NavigationBarOptions.parse(json.optJSONObject("navigationBar"));
-        result.statusBar = StatusBarOptions.parse(json.optJSONObject("statusBar"));
-        result.layout = LayoutOptions.parse(json.optJSONObject("layout"));
+        result.navigationBar = NavigationBarOptions.parse(context, json.optJSONObject("navigationBar"));
+        result.statusBar = StatusBarOptions.parse(context, json.optJSONObject("statusBar"));
+        result.layout = LayoutOptions.parse(context, json.optJSONObject("layout"));
+        result.hardwareBack = new HardwareBackButtonOptions(json.optJSONObject("hardwareBackButton"));
 
         return result;
     }
@@ -47,6 +50,7 @@ public class Options {
     @NonNull public NavigationBarOptions navigationBar = new NavigationBarOptions();
     @NonNull public StatusBarOptions statusBar = new StatusBarOptions();
     @NonNull public LayoutOptions layout = new LayoutOptions();
+    @NonNull public HardwareBackButtonOptions hardwareBack = new HardwareBackButtonOptions();
 
     void setTopTabIndex(int i) {
         topTabOptions.tabIndex = i;
@@ -68,6 +72,7 @@ public class Options {
         result.navigationBar.mergeWith(navigationBar);
         result.statusBar.mergeWith(statusBar);
         result.layout.mergeWith(layout);
+        result.hardwareBack.mergeWith(hardwareBack);
         return result;
     }
 
@@ -86,6 +91,7 @@ public class Options {
         result.navigationBar.mergeWith(other.navigationBar);
         result.statusBar.mergeWith(other.statusBar);
         result.layout.mergeWith(other.layout);
+        result.hardwareBack.mergeWith(other.hardwareBack);
         return result;
     }
 
@@ -102,6 +108,7 @@ public class Options {
         navigationBar.mergeWithDefault(defaultOptions.navigationBar);
         statusBar.mergeWithDefault(defaultOptions.statusBar);
         layout.mergeWithDefault(defaultOptions.layout);
+        hardwareBack.mergeWithDefault(defaultOptions.hardwareBack);
         return this;
     }
 

@@ -1,12 +1,11 @@
 import React from 'react';
 import {
   NavigationButtonPressedEvent,
-  ModalDismissedEvent,
-  ModalAttemptedToDismissEvent,
   SearchBarUpdatedEvent,
   SearchBarCancelPressedEvent,
   PreviewCompletedEvent,
   ScreenPoppedEvent,
+  ComponentWillAppearEvent,
   ComponentDidAppearEvent,
   ComponentDidDisappearEvent,
 } from './ComponentEvents';
@@ -18,13 +17,18 @@ export class NavigationComponent<Props = {}, State = {}, Snapshot = any> extends
   State,
   Snapshot
 > {
-  static options?: (() => Options) | Options;
+  /**
+   * Options used to apply a style configuration when the screen appears.
+   *
+   * This field can either contain the concrete options to be applied, or a generator function
+   * which accepts props and returns an Options object.
+   */
+  static options: ((props?: any) => Options) | Options;
 
+  componentWillAppear(_event: ComponentWillAppearEvent) {}
   componentDidAppear(_event: ComponentDidAppearEvent) {}
   componentDidDisappear(_event: ComponentDidDisappearEvent) {}
   navigationButtonPressed(_event: NavigationButtonPressedEvent) {}
-  modalDismissed(_event: ModalDismissedEvent) {}
-  modalAttemptedToDismiss(_event: ModalAttemptedToDismissEvent) {}
   searchBarUpdated(_event: SearchBarUpdatedEvent) {}
   searchBarCancelPressed(_event: SearchBarCancelPressedEvent) {}
   previewCompleted(_event: PreviewCompletedEvent) {}

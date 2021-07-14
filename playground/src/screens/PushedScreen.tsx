@@ -1,16 +1,17 @@
+import concat from 'lodash/concat';
 import React from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, StyleSheet, View } from 'react-native';
 import {
+  NavigationButtonPressedEvent,
   NavigationComponent,
   NavigationComponentProps,
-  NavigationButtonPressedEvent,
+  Options,
 } from 'react-native-navigation';
-import concat from 'lodash/concat';
-import Navigation from '../services/Navigation';
-import Root from '../components/Root';
 import Button from '../components/Button';
-import Screens from './Screens';
+import Root from '../components/Root';
+import Navigation from '../services/Navigation';
 import testIDs from '../testIDs';
+import Screens from './Screens';
 
 const {
   PUSHED_SCREEN_HEADER,
@@ -18,6 +19,8 @@ const {
   PUSH_BTN,
   POP_BTN,
   PUSH_NO_ANIM_BTN,
+  POP_USING_STACK_ID_BTN,
+  POP_USING_PREVIOUS_SCREEN_ID_BTN,
   POP_TO_FIRST_SCREEN_BTN,
   POP_TO_ROOT_BTN,
   ADD_BACK_HANDLER,
@@ -34,20 +37,23 @@ interface Props extends NavigationComponentProps {
 }
 
 export default class PushedScreen extends NavigationComponent<Props> {
-  static options() {
+  static options(): Options {
     return {
       topBar: {
         testID: PUSHED_SCREEN_HEADER,
         title: {
           text: 'Pushed Screen',
         },
-        rightButtons: {
-          id: 'singleBtn',
-          text: 'single',
-          testID: TOP_BAR_BTN,
-        },
+        rightButtons: [
+          {
+            id: 'singleBtn',
+            text: 'single',
+            testID: TOP_BAR_BTN,
+          },
+        ],
         backButton: {
           testID: BACK_BUTTON,
+          enableMenu: false,
         },
       },
     };
@@ -66,13 +72,27 @@ export default class PushedScreen extends NavigationComponent<Props> {
     const stackPosition = this.getStackPosition();
     return (
       <Root componentId={this.props.componentId} footer={`Stack Position: ${stackPosition}`}>
-        <Button label="Push" testID={PUSH_BTN} onPress={this.push} />
-        <Button label="Pop" testID={POP_BTN} onPress={this.pop} />
+        <View style={styles.container}>
+          <Button label="Push" testID={PUSH_BTN} onPress={this.push} marginH-5 />
+          <Button label="Pop" testID={POP_BTN} onPress={this.pop} marginH-5 />
+        </View>
         <Button
           label="Push Without Animation"
           testID={PUSH_NO_ANIM_BTN}
           onPress={this.pushWithoutAnimations}
         />
+        <Button
+          label="Pop Using Stack ID"
+          testID={POP_USING_STACK_ID_BTN}
+          onPress={this.popUsingStackId}
+        />
+        {stackPosition > 1 && (
+          <Button
+            label="Pop Using Previous Screen ID"
+            testID={POP_USING_PREVIOUS_SCREEN_ID_BTN}
+            onPress={this.popUsingPreviousScreenId}
+          />
+        )}
         {stackPosition > 2 && (
           <Button
             label="Pop to First Screen"
@@ -118,6 +138,11 @@ export default class PushedScreen extends NavigationComponent<Props> {
     });
 
   pop = () => Navigation.pop(this);
+
+  popUsingStackId = () => Navigation.pop('StackId');
+
+  popUsingPreviousScreenId = () =>
+    Navigation.pop(this.props.previousScreenIds[this.getStackPosition() - 2]);
 
   pushWithoutAnimations = () =>
     Navigation.push(this, {
@@ -165,11 +190,6 @@ export default class PushedScreen extends NavigationComponent<Props> {
             ),
           },
           options: {
-            animations: {
-              setStackRoot: {
-                enabled: false,
-              },
-            },
             topBar: {
               title: {
                 text: `Pushed ${this.getStackPosition() + 1} a`,
@@ -190,11 +210,6 @@ export default class PushedScreen extends NavigationComponent<Props> {
             ),
           },
           options: {
-            animations: {
-              setStackRoot: {
-                enabled: false,
-              },
-            },
             topBar: {
               title: {
                 text: `Pushed ${this.getStackPosition() + 1} b`,
@@ -224,3 +239,10 @@ export default class PushedScreen extends NavigationComponent<Props> {
   };
   getStackPosition = () => this.props.stackPosition || 1;
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+});
