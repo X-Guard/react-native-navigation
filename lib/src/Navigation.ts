@@ -26,31 +26,34 @@ import { ProcessorSubscription } from './interfaces/ProcessorSubscription';
 import { LayoutProcessor } from './processors/LayoutProcessor';
 import { LayoutProcessorsStore } from './processors/LayoutProcessorsStore';
 import { CommandName } from './interfaces/CommandName';
+import { OptionsCrawler } from './commands/OptionsCrawler';
+import { OptionsProcessor as OptionProcessor } from './interfaces/Processors';
 
 export class NavigationRoot {
   public readonly TouchablePreview = TouchablePreview;
 
-  private readonly store: Store;
+  public readonly store: Store;
   private readonly optionProcessorsStore: OptionProcessorsStore;
   private readonly layoutProcessorsStore: LayoutProcessorsStore;
-  private readonly nativeEventsReceiver: NativeEventsReceiver;
   private readonly uniqueIdProvider: UniqueIdProvider;
   private readonly componentRegistry: ComponentRegistry;
   private readonly layoutTreeParser: LayoutTreeParser;
   private readonly layoutTreeCrawler: LayoutTreeCrawler;
-  private readonly nativeCommandsSender: NativeCommandsSender;
   private readonly commands: Commands;
   private readonly eventsRegistry: EventsRegistry;
   private readonly commandsObserver: CommandsObserver;
   private readonly componentEventsObserver: ComponentEventsObserver;
   private readonly componentWrapper: ComponentWrapper;
+  private readonly optionsCrawler: OptionsCrawler;
 
-  constructor() {
+  constructor(
+    private readonly nativeCommandsSender: NativeCommandsSender,
+    private readonly nativeEventsReceiver: NativeEventsReceiver
+  ) {
     this.componentWrapper = new ComponentWrapper();
     this.store = new Store();
     this.optionProcessorsStore = new OptionProcessorsStore();
     this.layoutProcessorsStore = new LayoutProcessorsStore();
-    this.nativeEventsReceiver = new NativeEventsReceiver();
     this.uniqueIdProvider = new UniqueIdProvider();
     this.componentEventsObserver = new ComponentEventsObserver(
       this.nativeEventsReceiver,
@@ -74,8 +77,8 @@ export class NavigationRoot {
     );
     const layoutProcessor = new LayoutProcessor(this.layoutProcessorsStore);
     this.layoutTreeCrawler = new LayoutTreeCrawler(this.store, optionsProcessor);
-    this.nativeCommandsSender = new NativeCommandsSender();
     this.commandsObserver = new CommandsObserver(this.uniqueIdProvider);
+    this.optionsCrawler = new OptionsCrawler(this.store, this.uniqueIdProvider);
     this.commands = new Commands(
       this.store,
       this.nativeCommandsSender,
@@ -84,7 +87,8 @@ export class NavigationRoot {
       this.commandsObserver,
       this.uniqueIdProvider,
       optionsProcessor,
-      layoutProcessor
+      layoutProcessor,
+      this.optionsCrawler
     );
     this.eventsRegistry = new EventsRegistry(
       this.nativeEventsReceiver,
@@ -114,9 +118,9 @@ export class NavigationRoot {
   /**
    * Adds an option processor which allows option interpolation by optionPath.
    */
-  public addOptionProcessor<T>(
+  public addOptionProcessor<T, S = any>(
     optionPath: string,
-    processor: (value: T, commandName: CommandName) => T
+    processor: OptionProcessor<T, S>
   ): ProcessorSubscription {
     return this.optionProcessorsStore.addProcessor(optionPath, processor);
   }
@@ -139,6 +143,7 @@ export class NavigationRoot {
   /**
    * Utility helper function like registerComponent,
    * wraps the provided component with a react-redux Provider with the passed redux store
+   * @deprecated
    */
   public registerComponentWithRedux(
     componentName: string | number,
@@ -146,6 +151,9 @@ export class NavigationRoot {
     ReduxProvider: any,
     reduxStore: any
   ): ComponentProvider {
+    console.warn(
+      'registerComponentWithRedux is deprecated and will be removed in the next version! Please use Navigation.registerComponent instead. Visit the docs for more information https://wix.github.io/react-native-navigation/api/component#registering-a-component-wrapped-with-providers'
+    );
     return this.componentRegistry.registerComponent(
       componentName,
       getComponentClassFunc,
@@ -158,7 +166,7 @@ export class NavigationRoot {
   /**
    * Reset the app to a new layout
    */
-  public setRoot(layout: LayoutRoot): Promise<any> {
+  public setRoot(layout: LayoutRoot): Promise<string> {
     return this.commands.setRoot(layout);
   }
 
@@ -186,56 +194,59 @@ export class NavigationRoot {
   /**
    * Show a screen as a modal.
    */
-  public showModal<P>(layout: Layout<P>): Promise<any> {
+  public showModal<P>(layout: Layout<P>): Promise<string> {
     return this.commands.showModal(layout);
   }
 
   /**
    * Dismiss a modal by componentId. The dismissed modal can be anywhere in the stack.
    */
-  public dismissModal(componentId: string, mergeOptions?: Options): Promise<any> {
+  public dismissModal(componentId: string, mergeOptions?: Options): Promise<string> {
     return this.commands.dismissModal(componentId, mergeOptions);
   }
 
   /**
    * Dismiss all Modals
    */
-  public dismissAllModals(mergeOptions?: Options): Promise<any> {
+  public dismissAllModals(mergeOptions?: Options): Promise<string> {
     return this.commands.dismissAllModals(mergeOptions);
   }
 
   /**
    * Push a new layout into this screen's navigation stack.
    */
-  public push<P>(componentId: string, layout: Layout<P>): Promise<any> {
+  public push<P>(componentId: string, layout: Layout<P>): Promise<string> {
     return this.commands.push(componentId, layout);
   }
 
   /**
    * Pop a component from the stack, regardless of it's position.
    */
-  public pop(componentId: string, mergeOptions?: Options): Promise<any> {
+  public pop(componentId: string, mergeOptions?: Options): Promise<string> {
     return this.commands.pop(componentId, mergeOptions);
   }
 
   /**
    * Pop the stack to a given component
    */
-  public popTo(componentId: string, mergeOptions?: Options): Promise<any> {
+  public popTo(componentId: string, mergeOptions?: Options): Promise<string> {
     return this.commands.popTo(componentId, mergeOptions);
   }
 
   /**
    * Pop the component's stack to root.
    */
-  public popToRoot(componentId: string, mergeOptions?: Options): Promise<any> {
+  public popToRoot(componentId: string, mergeOptions?: Options): Promise<string> {
     return this.commands.popToRoot(componentId, mergeOptions);
   }
 
   /**
    * Sets new root component to stack.
    */
-  public setStackRoot<P>(componentId: string, layout: Layout<P> | Array<Layout<P>>): Promise<any> {
+  public setStackRoot<P>(
+    componentId: string,
+    layout: Layout<P> | Array<Layout<P>>
+  ): Promise<string> {
     const children: Layout[] = isArray(layout) ? layout : [layout];
     return this.commands.setStackRoot(componentId, children);
   }
@@ -243,15 +254,22 @@ export class NavigationRoot {
   /**
    * Show overlay on top of the entire app
    */
-  public showOverlay<P>(layout: Layout<P>): Promise<any> {
+  public showOverlay<P>(layout: Layout<P>): Promise<string> {
     return this.commands.showOverlay(layout);
   }
 
   /**
    * dismiss overlay by componentId
    */
-  public dismissOverlay(componentId: string): Promise<any> {
+  public dismissOverlay(componentId: string): Promise<string> {
     return this.commands.dismissOverlay(componentId);
+  }
+
+  /**
+   * dismiss all overlays
+   */
+  public dismissAllOverlays(): Promise<string> {
+    return this.commands.dismissAllOverlays();
   }
 
   /**
@@ -273,5 +291,12 @@ export class NavigationRoot {
    */
   public async constants(): Promise<NavigationConstants> {
     return await Constants.get();
+  }
+
+  /**
+   * Constants coming from native (synchronized call)
+   */
+  public constantsSync(): NavigationConstants {
+    return Constants.getSync();
   }
 }

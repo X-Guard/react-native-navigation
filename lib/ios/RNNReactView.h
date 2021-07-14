@@ -16,30 +16,35 @@
 
 typedef void (^RNNReactViewReadyCompletionBlock)(void);
 
+@protocol RNNComponentProtocol <NSObject>
+
+- (NSString *)componentId;
+
+- (NSString *)componentType;
+
+- (void)componentWillAppear;
+
+- (void)componentDidAppear;
+
+- (void)componentDidDisappear;
+
+@end
+
 #ifdef RN_FABRIC_ENABLED
 @interface RNNReactView
-    : RCTFabricSurfaceHostingProxyRootView <RCTRootViewDelegate>
+    : RCTFabricSurfaceHostingProxyRootView <RCTRootViewDelegate, RNNComponentProtocol>
 #else
-@interface RNNReactView : RCTRootView <RCTRootViewDelegate>
+@interface RNNReactView : RCTRootView <RCTRootViewDelegate, RNNComponentProtocol>
 #endif
 
 - (instancetype)initWithBridge:(RCTBridge *)bridge
                     moduleName:(NSString *)moduleName
              initialProperties:(NSDictionary *)initialProperties
                   eventEmitter:(RNNEventEmitter *)eventEmitter
-           reactViewReadyBlock:
-               (RNNReactViewReadyCompletionBlock)reactViewReadyBlock;
+           reactViewReadyBlock:(RNNReactViewReadyCompletionBlock)reactViewReadyBlock;
 
 @property(nonatomic, copy) RNNReactViewReadyCompletionBlock reactViewReadyBlock;
 @property(nonatomic, strong) RNNEventEmitter *eventEmitter;
-
-- (NSString *)componentId;
-
-- (NSString *)componentType;
-
-- (void)componentDidAppear;
-
-- (void)componentDidDisappear;
 
 - (void)invalidate;
 

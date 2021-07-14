@@ -1,5 +1,7 @@
 package com.reactnativenavigation.options;
 
+import android.content.Context;
+
 import com.reactnativenavigation.options.params.Bool;
 import com.reactnativenavigation.options.params.NullBool;
 import com.reactnativenavigation.options.params.Text;
@@ -11,7 +13,7 @@ import com.reactnativenavigation.react.Constants;
 import org.json.JSONObject;
 
 public class BackButton extends ButtonOptions {
-    public static BackButton parse(JSONObject json) {
+    public static BackButton parse(Context context, JSONObject json) {
         BackButton result = new BackButton();
         if (json == null || json.toString().equals("{}")) return result;
 
@@ -22,9 +24,10 @@ public class BackButton extends ButtonOptions {
         result.id = json.optString("id", Constants.BACK_BUTTON_ID);
         result.enabled = BoolParser.parse(json, "enabled");
         result.disableIconTint = BoolParser.parse(json, "disableIconTint");
-        result.color = ColorParser.parse(json, "color");
-        result.disabledColor = ColorParser.parse(json, "disabledColor");
+        result.color = ColorParser.parse(context, json, "color");
+        result.disabledColor = ColorParser.parse(context, json, "disabledColor");
         result.testId = TextParser.parse(json, "testID");
+        result.popStackOnPress = BoolParser.parse(json, "popStackOnPress");
 
         return result;
     }
@@ -51,6 +54,7 @@ public class BackButton extends ButtonOptions {
         if (other.disableIconTint.hasValue()) disableIconTint = other.disableIconTint;
         if (other.enabled.hasValue()) enabled = other.enabled;
         if (other.testId.hasValue()) testId = other.testId;
+        if (other.popStackOnPress.hasValue()) popStackOnPress = other.popStackOnPress;
     }
 
     void mergeWithDefault(final BackButton defaultOptions) {
@@ -63,6 +67,7 @@ public class BackButton extends ButtonOptions {
         if (!disableIconTint.hasValue()) disableIconTint = defaultOptions.disableIconTint;
         if (!enabled.hasValue()) enabled = defaultOptions.enabled;
         if (!testId.hasValue()) testId = defaultOptions.testId;
+        if (!popStackOnPress.hasValue()) popStackOnPress = defaultOptions.popStackOnPress;
     }
 
     public void setVisible() {
@@ -73,5 +78,10 @@ public class BackButton extends ButtonOptions {
     public void setHidden() {
         visible = new Bool(false);
         hasValue = true;
+    }
+
+    @Override
+    public boolean isBackButton() {
+        return true;
     }
 }
