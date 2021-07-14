@@ -1,12 +1,9 @@
 import Navigation from './services/Navigation';
 import { registerScreens } from './screens';
-import addOptionsProcessors from './commons/OptionProcessors';
-import { setDefaultOptions } from './commons/Options';
+import addProcessors from './commons/Processors';
+import { setDefaultOptions } from './commons/options/Options';
 import testIDs from './testIDs';
 import Screens from './screens/Screens';
-import { unstable_enableLogBox } from 'react-native';
-
-unstable_enableLogBox();
 
 // @ts-ignore
 alert = (title, message) =>
@@ -22,7 +19,7 @@ alert = (title, message) =>
 
 function start() {
   registerScreens();
-  addOptionsProcessors();
+  addProcessors();
   setDefaultOptions();
   Navigation.events().registerAppLaunchedListener(async () => {
     Navigation.dismissAllModals();

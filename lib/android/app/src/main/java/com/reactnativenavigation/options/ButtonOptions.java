@@ -1,6 +1,6 @@
 package com.reactnativenavigation.options;
 
-import android.graphics.Typeface;
+import android.content.Context;
 import android.view.MenuItem;
 
 import com.reactnativenavigation.options.params.Bool;
@@ -15,19 +15,17 @@ import com.reactnativenavigation.options.params.Number;
 import com.reactnativenavigation.options.params.Text;
 import com.reactnativenavigation.options.parsers.BoolParser;
 import com.reactnativenavigation.options.parsers.ColorParser;
+import com.reactnativenavigation.options.parsers.FontParser;
 import com.reactnativenavigation.options.parsers.FractionParser;
 import com.reactnativenavigation.options.parsers.TextParser;
 import com.reactnativenavigation.utils.CompatUtils;
 import com.reactnativenavigation.utils.IdFactory;
-import com.reactnativenavigation.options.parsers.TypefaceLoader;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Objects;
-
-import androidx.annotation.Nullable;
 
 import static com.reactnativenavigation.utils.ObjectUtils.take;
 
@@ -40,15 +38,16 @@ public class ButtonOptions {
     public Bool allCaps = new NullBool();
     public Bool enabled = new NullBool();
     public Bool disableIconTint = new NullBool();
+    public Bool popStackOnPress = new NullBool();
     public Number showAsAction = new NullNumber();
     public Colour color = new NullColor();
     public Colour disabledColor = new NullColor();
     public Fraction fontSize = new NullFraction();
-    private Text fontWeight = new NullText();
-    @Nullable public Typeface fontFamily;
+    public FontOptions font = new FontOptions();
     public Text icon = new NullText();
     public Text testId = new NullText();
     public ComponentOptions component = new ComponentOptions();
+    public IconBackgroundOptions iconBackground = new IconBackgroundOptions();
 
     public boolean equals(ButtonOptions other) {
         return Objects.equals(id, other.id) &&
@@ -61,14 +60,14 @@ public class ButtonOptions {
                color.equals(other.color) &&
                disabledColor.equals(other.disabledColor) &&
                fontSize.equals(other.fontSize) &&
-               fontWeight.equals(other.fontWeight) &&
-               Objects.equals(fontFamily, other.fontFamily) &&
+               font.equals(other.font) &&
                icon.equals(other.icon) &&
                testId.equals(other.testId) &&
-               component.equals(other.component);
+               component.equals(other.component) &&
+                popStackOnPress.equals(other.popStackOnPress);
     }
 
-    private static ButtonOptions parseJson(JSONObject json, TypefaceLoader typefaceManager) {
+    private static ButtonOptions parseJson(Context context, JSONObject json) {
         ButtonOptions button = new ButtonOptions();
         button.id = take(json.optString("id"), "btn" + CompatUtils.generateViewId());
         button.accessibilityLabel = TextParser.parse(json, "accessibilityLabel");
@@ -76,15 +75,15 @@ public class ButtonOptions {
         button.allCaps = BoolParser.parse(json, "allCaps");
         button.enabled = BoolParser.parse(json, "enabled");
         button.disableIconTint = BoolParser.parse(json, "disableIconTint");
+        button.popStackOnPress = BoolParser.parse(json, "popStackOnPress");
         button.showAsAction = parseShowAsAction(json);
-        button.color = ColorParser.parse(json, "color");
-        button.disabledColor = ColorParser.parse(json, "disabledColor");
+        button.color = ColorParser.parse(context, json, "color");
+        button.disabledColor = ColorParser.parse(context, json, "disabledColor");
         button.fontSize = FractionParser.parse(json, "fontSize");
-        button.fontFamily = typefaceManager.getTypeFace(json.optString("fontFamily", ""));
-        button.fontWeight = TextParser.parse(json, "fontWeight");
+        button.font = FontParser.parse(json);
         button.testId = TextParser.parse(json, "testID");
         button.component = ComponentOptions.parse(json.optJSONObject("component"));
-
+        button.iconBackground = IconBackgroundOptions.parse(context, json.optJSONObject("iconBackground"));
         if (json.has("icon")) {
             button.icon = TextParser.parse(json.optJSONObject("icon"), "uri");
         }
@@ -92,7 +91,7 @@ public class ButtonOptions {
         return button;
     }
 
-    public static ArrayList<ButtonOptions> parse(JSONObject json, String buttonsType, TypefaceLoader typefaceLoader) {
+    public static ArrayList<ButtonOptions> parse(Context context, JSONObject json, String buttonsType) {
         ArrayList<ButtonOptions> buttons = new ArrayList<>();
         if (!json.has(buttonsType)) {
             return null;
@@ -100,18 +99,18 @@ public class ButtonOptions {
 
         JSONArray jsonArray = json.optJSONArray(buttonsType);
         if (jsonArray != null) {
-            buttons.addAll(parseJsonArray(jsonArray, typefaceLoader));
+            buttons.addAll(parseJsonArray(context, jsonArray));
         } else {
-            buttons.add(parseJson(json.optJSONObject(buttonsType), typefaceLoader));
+            buttons.add(parseJson(context, json.optJSONObject(buttonsType)));
         }
         return buttons;
     }
 
-    private static ArrayList<ButtonOptions> parseJsonArray(JSONArray jsonArray, TypefaceLoader typefaceLoader) {
+    private static ArrayList<ButtonOptions> parseJsonArray(Context context, JSONArray jsonArray) {
         ArrayList<ButtonOptions> buttons = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject json = jsonArray.optJSONObject(i);
-            ButtonOptions button = ButtonOptions.parseJson(json, typefaceLoader);
+            ButtonOptions button = ButtonOptions.parseJson(context, json);
             buttons.add(button);
         }
         return buttons;
@@ -129,6 +128,12 @@ public class ButtonOptions {
 
     public boolean hasIcon() {
         return icon.hasValue();
+    }
+
+    public boolean isBackButton() { return false; }
+
+    public boolean shouldPopOnPress() {
+        return popStackOnPress.get(true);
     }
 
     public int getIntId() {
@@ -163,14 +168,15 @@ public class ButtonOptions {
         if (other.color.hasValue()) color = other.color;
         if (other.disabledColor.hasValue()) disabledColor = other.disabledColor;
         if (other.fontSize.hasValue()) fontSize = other.fontSize;
-        if (other.fontFamily != null) fontFamily = other.fontFamily;
-        if (other.fontWeight.hasValue()) fontWeight = other.fontWeight;
+        font.mergeWith(other.font);
         if (other.testId.hasValue()) testId = other.testId;
         if (other.component.hasValue()) component = other.component;
         if (other.showAsAction.hasValue()) showAsAction = other.showAsAction;
         if (other.icon.hasValue()) icon = other.icon;
         if (other.id != null) id = other.id;
         if (other.instanceId != null) instanceId = other.instanceId;
+        if (other.iconBackground.hasValue()) iconBackground = other.iconBackground;
+        if (other.popStackOnPress.hasValue()) popStackOnPress = other.popStackOnPress;
     }
 
     public void mergeWithDefault(ButtonOptions defaultOptions) {
@@ -182,11 +188,12 @@ public class ButtonOptions {
         if (!color.hasValue()) color = defaultOptions.color;
         if (!disabledColor.hasValue()) disabledColor = defaultOptions.disabledColor;
         if (!fontSize.hasValue()) fontSize = defaultOptions.fontSize;
-        if (fontFamily == null) fontFamily = defaultOptions.fontFamily;
-        if (!fontWeight.hasValue()) fontWeight = defaultOptions.fontWeight;
+        font.mergeWithDefault(defaultOptions.font);
         if (!testId.hasValue()) testId = defaultOptions.testId;
         if (!component.hasValue()) component = defaultOptions.component;
         if (!showAsAction.hasValue()) showAsAction = defaultOptions.showAsAction;
         if (!icon.hasValue()) icon = defaultOptions.icon;
+        if (!iconBackground.hasValue()) iconBackground = defaultOptions.iconBackground;
+        if (!popStackOnPress.hasValue()) popStackOnPress = defaultOptions.popStackOnPress;
     }
 }
