@@ -1,4 +1,5 @@
 import React from 'react';
+import { gestureHandlerRootHOC } from 'react-native-gesture-handler';
 import { Navigation } from 'react-native-navigation';
 import Screens from './Screens';
 
@@ -11,6 +12,27 @@ function registerScreens() {
   Navigation.registerComponent(
     Screens.CocktailsListScreen,
     () => require('./sharedElementTransition/CocktailsListScreen').default
+  );
+  Navigation.registerComponent(
+    Screens.CarsListScreen,
+    () => require('./sharedElementCarDealer/CarsListScreen').default
+  );
+  Navigation.registerComponent(Screens.CarDetailsScreen, () =>
+    gestureHandlerRootHOC(require('./sharedElementCarDealer/CarDetailsScreen').default)
+  );
+  Navigation.registerComponent(Screens.CarStoryScreen, () =>
+    gestureHandlerRootHOC(require('./sharedElementCarDealer/CarStoryScreen').default)
+  );
+  Navigation.registerComponent(Screens.ImageFullScreenViewer, () =>
+    gestureHandlerRootHOC(require('./sharedElementCarDealer/ImageFullScreenViewer').default)
+  );
+  Navigation.registerComponent(
+    Screens.ImageGalleryListScreen,
+    () => require('./imageGallery/ImageGalleryListScreen').default
+  );
+  Navigation.registerComponent(
+    Screens.ImageGalleryItemScreen,
+    () => require('./imageGallery/ImageGalleryItemScreen').default
   );
   Navigation.registerComponent(
     Screens.CocktailsListMasterScreen,
@@ -34,6 +56,14 @@ function registerScreens() {
   Navigation.registerComponent(Screens.Lifecycle, () => require('./LifecycleScreen').default);
   Navigation.registerComponent(Screens.Modal, () => require('./ModalScreen').default);
   Navigation.registerComponent(
+    Screens.ModalCommands,
+    () => require('./ModalCommandsScreen').default
+  );
+  Navigation.registerComponent(
+    Screens.StackCommands,
+    () => require('./StackCommandsScreen').default
+  );
+  Navigation.registerComponent(
     Screens.FullScreenModal,
     () => require('./FullScreenModalScreen').default
   );
@@ -48,6 +78,7 @@ function registerScreens() {
   Navigation.registerComponent(Screens.Overlay, () => require('./OverlayScreen').default);
   Navigation.registerComponent(Screens.OverlayAlert, () => require('./OverlayAlert').default);
   Navigation.registerComponent(Screens.Pushed, () => require('./PushedScreen').default);
+  Navigation.registerComponent(Screens.BackButton, () => require('./BackButtonScreen').default);
   Navigation.registerComponent(
     Screens.ScrollViewOverlay,
     () => require('./ScrollViewOverlay').default
@@ -68,6 +99,8 @@ function registerScreens() {
     () => require('./SecondBottomTabScreen').default
   );
   Navigation.registerComponent(Screens.Search, () => require('./SearchScreen').default);
+  Navigation.registerComponent(Screens.SearchBar, () => require('./SearchBar').default);
+  Navigation.registerComponent(Screens.SearchBarModal, () => require('./SearchBarModal').default);
   Navigation.registerComponent(Screens.SetRoot, () => require('./SetRootScreen').default);
   Navigation.registerComponent(
     Screens.SideMenuCenter,

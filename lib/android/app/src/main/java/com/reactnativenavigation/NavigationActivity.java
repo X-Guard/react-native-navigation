@@ -2,6 +2,7 @@ package com.reactnativenavigation;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,10 +42,16 @@ public class NavigationActivity extends AppCompatActivity implements DefaultHard
                 new ChildControllersRegistry(),
                 new ModalStack(this),
                 new OverlayManager(),
-                new RootPresenter(this)
+                new RootPresenter()
         );
         navigator.bindViews();
         getReactGateway().onActivityCreated(this);
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        getReactGateway().onConfigurationChanged(this, newConfig);
     }
 
     @Override
@@ -101,7 +108,7 @@ public class NavigationActivity extends AppCompatActivity implements DefaultHard
 
     @Override
     public boolean onKeyUp(final int keyCode, final KeyEvent event) {
-        return getReactGateway().onKeyUp(keyCode) || super.onKeyUp(keyCode, event);
+        return getReactGateway().onKeyUp(this, keyCode) || super.onKeyUp(keyCode, event);
     }
 
     public ReactGateway getReactGateway() {
